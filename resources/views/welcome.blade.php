@@ -295,8 +295,21 @@
 
         {{-- Response --}}
         <section class="flex-1 overflow-hidden flex flex-col min-h-0 px-7 py-5">
-            <div class="mb-3">
+            <div class="mb-3 flex items-center gap-3">
                 <h2 class="text-xs font-bold uppercase tracking-widest text-stone-500">RESPONSE</h2>
+                <template x-if="response || error">
+                    <div class="flex items-center gap-2 flex-1 min-w-0">
+                        <span x-show="error" class="text-rose-500 text-xs font-semibold truncate" x-text="error"></span>
+                        <div class="ml-auto flex items-center gap-2 shrink-0">
+                            <span :class="statusBadgeClass(response?.status_code)"
+                                  class="px-2.5 py-1 rounded-full border border-orange-300 bg-white text-xs font-bold"
+                                  x-text="response?.status_code ? 'HTTP ' + response.status_code : 'CONNECTION ERROR'"></span>
+                            <span x-show="response?.duration_ms"
+                                  class="px-2.5 py-1 rounded-full border border-orange-300 bg-white text-stone-600 text-xs font-bold"
+                                  x-text="response.duration_ms + ' MS'"></span>
+                        </div>
+                    </div>
+                </template>
             </div>
 
             <div x-show="!response && !error && !loading"
@@ -312,19 +325,6 @@
 
             <template x-if="response || error">
                 <div class="flex-1 flex flex-col min-h-0 space-y-3">
-
-                    {{-- Status bar --}}
-                    <div class="flex items-center justify-between gap-3 text-sm">
-                        <span x-show="error" class="text-rose-500 text-xs font-semibold" x-text="error"></span>
-                        <div class="ml-auto flex items-center gap-2">
-                            <span :class="statusBadgeClass(response?.status_code)"
-                                  class="px-2.5 py-1 rounded-full border border-orange-300 bg-white text-xs font-bold"
-                                  x-text="response?.status_code ? 'HTTP ' + response.status_code : 'CONNECTION ERROR'"></span>
-                            <span x-show="response?.duration_ms"
-                                  class="px-2.5 py-1 rounded-full border border-orange-300 bg-white text-stone-600 text-xs font-bold"
-                                  x-text="response.duration_ms + ' MS'"></span>
-                        </div>
-                    </div>
 
                     {{-- Response tabs --}}
                     <div class="flex gap-1 border-b border-orange-300">
