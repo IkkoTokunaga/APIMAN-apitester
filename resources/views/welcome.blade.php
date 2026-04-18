@@ -98,7 +98,11 @@
                         class="text-xs px-3 py-2 border-b-2 transition-colors font-semibold">ヘッダー</button>
                 <button @click="tab = 'body'"
                         :class="tab === 'body' ? 'border-orange-400 text-orange-600' : 'border-transparent text-stone-400 hover:text-stone-600'"
-                        class="text-xs px-3 py-2 border-b-2 transition-colors font-semibold">ボディ (JSON)</button>
+                        class="text-xs px-3 py-2 border-b-2 transition-colors font-semibold">
+                    <span>ボディ</span>
+                    <span class="text-stone-300 font-normal"
+                          x-text="isFormUrlEncoded() ? '(Form)' : '(JSON)'"></span>
+                </button>
             </div>
 
             {{-- Headers tab --}}
@@ -132,15 +136,43 @@
 
             {{-- Body tab --}}
             <div x-show="tab === 'body'">
-                <textarea x-model="form.body"
-                          placeholder='{"key": "value"}'
-                          rows="5"
-                          class="w-full bg-white border border-orange-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 placeholder-stone-300 resize-y font-mono text-stone-700 shadow-sm transition-all"></textarea>
-                <div class="flex gap-2 mt-2">
-                    <button @click="formatBody()"
-                            class="text-xs text-stone-500 hover:text-orange-600 hover:bg-orange-50 px-3 py-1 rounded-full transition-colors font-semibold">JSON整形</button>
-                    <button @click="form.body = ''"
-                            class="text-xs text-stone-500 hover:text-rose-500 hover:bg-rose-50 px-3 py-1 rounded-full transition-colors font-semibold">クリア</button>
+                {{-- JSON / Plain text など --}}
+                <div x-show="!isFormUrlEncoded()">
+                    <textarea x-model="form.body"
+                              placeholder='{"key": "value"}'
+                              rows="5"
+                              class="w-full bg-white border border-orange-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 placeholder-stone-300 resize-y font-mono text-stone-700 shadow-sm transition-all"></textarea>
+                    <div class="flex gap-2 mt-2">
+                        <button @click="formatBody()"
+                                class="text-xs text-stone-500 hover:text-orange-600 hover:bg-orange-50 px-3 py-1 rounded-full transition-colors font-semibold">JSON整形</button>
+                        <button @click="form.body = ''"
+                                class="text-xs text-stone-500 hover:text-rose-500 hover:bg-rose-50 px-3 py-1 rounded-full transition-colors font-semibold">クリア</button>
+                    </div>
+                </div>
+
+                {{-- application/x-www-form-urlencoded --}}
+                <div x-show="isFormUrlEncoded()" class="space-y-2">
+                    <template x-if="form.formFields.length === 0">
+                        <p class="text-xs text-stone-400 py-2">Key / Value を追加してください</p>
+                    </template>
+                    <template x-for="(field, index) in form.formFields" :key="index">
+                        <div class="flex gap-2">
+                            <input x-model="field.key"
+                                   placeholder="Key (例: username)"
+                                   class="flex-1 bg-white border border-orange-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 placeholder-stone-300 shadow-sm transition-all">
+                            <input x-model="field.value"
+                                   placeholder="Value (例: john)"
+                                   class="flex-1 bg-white border border-orange-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 placeholder-stone-300 shadow-sm transition-all">
+                            <button @click="removeFormField(index)"
+                                    class="text-stone-300 hover:text-rose-500 transition-colors text-sm px-1">✕</button>
+                        </div>
+                    </template>
+                    <div class="flex gap-2">
+                        <button @click="addFormField()"
+                                class="text-xs text-orange-500 hover:text-orange-600 hover:bg-orange-50 px-3 py-1.5 rounded-full transition-colors font-semibold">+ フィールドを追加</button>
+                        <button @click="form.formFields = []"
+                                class="text-xs text-stone-500 hover:text-rose-500 hover:bg-rose-50 px-3 py-1.5 rounded-full transition-colors font-semibold">クリア</button>
+                    </div>
                 </div>
             </div>
 
@@ -205,7 +237,7 @@
 <script>
 function apiTester() {
     return {
-        tab: 'headers',
+        tab: 'body',
         resTab: 'body',
         loading: false,
         form: {
@@ -214,6 +246,7 @@ function apiTester() {
             contentType: 'application/x-www-form-urlencoded',
             headers: [],
             body: '',
+            formFields: [],
         },
         response: null,
         error: null,
@@ -225,10 +258,48 @@ function apiTester() {
         removeHeader(index) {
             this.form.headers.splice(index, 1);
         },
+        addFormField() {
+            this.form.formFields.push({ key: '', value: '' });
+        },
+        removeFormField(index) {
+            this.form.formFields.splice(index, 1);
+        },
         formatBody() {
             try {
                 this.form.body = JSON.stringify(JSON.parse(this.form.body), null, 2);
             } catch {}
+        },
+
+        isFormUrlEncoded() {
+            return this.shouldShowContentType()
+                && this.form.contentType === 'application/x-www-form-urlencoded';
+        },
+
+        buildBody() {
+            if (this.isFormUrlEncoded()) {
+                const params = new URLSearchParams();
+                for (const f of this.form.formFields) {
+                    const key = (f.key ?? '').trim();
+                    if (!key) continue;
+                    params.append(key, f.value ?? '');
+                }
+                return params.toString();
+            }
+            return this.form.body;
+        },
+
+        parseUrlEncodedBody(body) {
+            if (typeof body !== 'string' || body === '') return [];
+            try {
+                const params = new URLSearchParams(body);
+                const fields = [];
+                for (const [k, v] of params.entries()) {
+                    fields.push({ key: k, value: v });
+                }
+                return fields;
+            } catch {
+                return [];
+            }
         },
 
         headersToObject() {
@@ -265,7 +336,7 @@ function apiTester() {
                         method:  this.form.method,
                         url:     this.form.url,
                         headers: this.headersToObject(),
-                        body:    this.form.body,
+                        body:    this.buildBody(),
                     }),
                 });
                 const data = await res.json();
@@ -302,6 +373,9 @@ function apiTester() {
             this.form.headers = Object.entries(hdrs)
                 .filter(([k]) => k.toLowerCase() !== 'content-type')
                 .map(([k, v]) => ({ key: k, value: v }));
+            this.form.formFields = this.isFormUrlEncoded()
+                ? this.parseUrlEncodedBody(this.form.body)
+                : [];
             this.response = {
                 status_code:      h.status_code,
                 response_body:    h.response_body,
