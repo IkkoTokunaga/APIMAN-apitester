@@ -1,0 +1,40 @@
+# 🚀 Laravel 12 APIテスター：開発＆配布パッケージ作成プロンプト
+
+## 1. 依頼内容
+Laravel 12 (PHP 8.4) をベースとした、配布可能な「単一コンテナ型APIテスター」を構築してください。
+ホストOSを汚さず、開発時はホットリロードを効かせ、配布時は DockerHub から `docker compose up` 一発で動く構成を目指します。
+
+## 2. 技術スタック
+- **Backend:** Laravel 12 (PHP 8.4-FPM)
+- **Frontend:** Alpine.js (低コスト・高速開発)
+- **Styling:** Tailwind CSS v4 (CSS-first 構成)
+- **DB:** SQLite (永続化対応 / ID・PASS不要)
+- **Server:** Nginx + Supervisor (1コンテナに同居)
+
+## 3. 構成ファイルの詳細
+### ① Docker & Web Server
+- **Dockerfile**: マルチステージビルドを採用。
+  - `node` ステージで Tailwind v4 をビルド。
+  - `php:8.4-fpm-alpine` ステージで Nginx, Supervisor, Node.js をインストールし、ビルド済みアセットを統合。
+- **nginx.conf / supervisord.conf**: 安定したリクエスト処理のため、PHP-FPM と Nginx を適切に管理。
+- **entrypoint.sh**: 起動時に `.env` の作成、SQLiteファイル (`database/database.sqlite`) の自動作成、`php artisan migrate --force` を実行するスクリプト。
+- ホストOSとコンテナ内のユーザどちらかもファイル操作できるようにユーザ設定を行ってください。
+### ② Docker Compose (開発・配布共存型)
+- `build: .` と `image: apiman/api-tester:latest` を併記。
+- 開発時はホストのソースコードを `/var/www/html` にマウントし、Vite のホットリロード (`5173` ポート) を有効化。
+- `./database` をマウントし、コンテナを削除しても履歴が消えないように設定。
+
+### ③ アプリケーション機能
+- **APIプロキシ**: `Http` ファサードを使用。フロントからのリクエストを中継し、CORSを回避して外部APIを叩く機能を実装。
+- **UI (Alpine.js)**: `welcome.blade.php` に実装。メソッド選択、URL入力、ヘッダー/ボディ(JSON)入力、レスポンス表示、実行履歴一覧（SQLite保存分）を表示。
+
+## 4. Git 運用ルールの定義
+今後、私が「Push」または「Pushして」と指示した場合は、以下の手順を自動で実行してください：
+1. `git status` で差分を確認。
+2. 作業内容を簡潔に要約したコミットメッセージを生成。
+3. `git add .` および `git commit` を実行。
+4. 現在のブランチを `origin` へ `git push`。
+
+## 5. 成果物への要求
+- 上記すべての設定ファイル一式を作成してください。
+- 最初に「開発を始めるための最初の1歩（`docker compose up --build` 等）」を提示してください。

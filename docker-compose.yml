@@ -1,0 +1,26 @@
+services:
+  app:
+    build:
+      context: .
+      args:
+        # ホスト側 UID/GID を渡してコンテナ内 www-data と揃える
+        # 必要に応じて `UID=$(id -u) GID=$(id -g) docker compose build` で上書き可
+        UID: "${UID:-1000}"
+        GID: "${GID:-1000}"
+    image: apiman/api-tester:latest
+    ports:
+      - "8080:80"
+      - "5173:5173"
+    volumes:
+      # 開発時: ソースコードをマウントしてホットリロードを有効化
+      - .:/var/www/html
+      # SQLite を永続化（コンテナ削除後も履歴が残る）
+      - ./database:/var/www/html/database
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: "http://localhost:8080"
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /var/www/html/database/database.sqlite
+      VITE_PORT: "5173"
+    restart: unless-stopped
