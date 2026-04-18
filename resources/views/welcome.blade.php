@@ -22,12 +22,12 @@
             <button @click="sideTab = 'history'"
                     :class="sideTab === 'history' ? 'bg-white text-orange-600 border-b-2 border-orange-500' : 'text-stone-400 hover:text-stone-600 border-b-2 border-transparent'"
                     class="flex-1 text-xs font-bold uppercase tracking-widest py-3 transition-all flex items-center justify-center gap-1.5">
-                <span>🕒</span> HISTORY
+                HISTORY
             </button>
             <button @click="sideTab = 'saved'"
                     :class="sideTab === 'saved' ? 'bg-white text-orange-600 border-b-2 border-orange-500' : 'text-stone-400 hover:text-stone-600 border-b-2 border-transparent'"
                     class="flex-1 text-xs font-bold uppercase tracking-widest py-3 transition-all flex items-center justify-center gap-1.5">
-                <span>⭐</span> SAVED
+                SAVED
             </button>
         </div>
 
@@ -83,15 +83,12 @@
                                     class="shrink-0 text-stone-400 hover:text-orange-500 w-4 text-center text-xs">
                                 <span x-text="collapsed[c.id] ? '▸' : '▾'"></span>
                             </button>
-                            <span class="text-xs">📁</span>
                             <span class="text-xs font-bold text-stone-600 truncate flex-1" x-text="c.name"></span>
                             <span class="text-[10px] text-stone-400 shrink-0" x-text="(c.saved_requests?.length ?? 0)"></span>
                             <button @click.stop="renameCollection(c)"
-                                    title="RENAME"
-                                    class="opacity-0 group-hover:opacity-100 hover:opacity-100 text-[10px] text-stone-400 hover:text-orange-600 px-1">✎</button>
+                                    class="opacity-0 group-hover:opacity-100 hover:opacity-100 text-[10px] text-stone-400 hover:text-orange-600 px-1 font-bold">RENAME</button>
                             <button @click.stop="deleteCollection(c)"
-                                    title="DELETE"
-                                    class="text-[10px] text-stone-400 hover:text-rose-500 px-1">✕</button>
+                                    class="opacity-0 group-hover:opacity-100 text-[10px] text-stone-400 hover:text-rose-500 px-1 font-bold">DEL</button>
                         </div>
 
                         <div x-show="!collapsed[c.id]" class="pl-3">
@@ -109,8 +106,7 @@
                                         <p class="text-[10px] text-stone-400 truncate" x-text="r.url"></p>
                                     </div>
                                     <button @click.stop="deleteSaved(r)"
-                                            title="DELETE"
-                                            class="opacity-0 group-hover:opacity-100 text-[10px] text-stone-400 hover:text-rose-500 px-1">✕</button>
+                                            class="opacity-0 group-hover:opacity-100 text-[10px] text-stone-400 hover:text-rose-500 px-1 font-bold">DEL</button>
                                 </div>
                             </template>
                         </div>
@@ -125,7 +121,6 @@
                                     class="shrink-0 text-stone-400 hover:text-orange-500 w-4 text-center text-xs">
                                 <span x-text="collapsed['__uncat__'] ? '▸' : '▾'"></span>
                             </button>
-                            <span class="text-xs">📄</span>
                             <span class="text-xs font-bold text-stone-600 truncate flex-1">UNCATEGORIZED</span>
                             <span class="text-[10px] text-stone-400 shrink-0" x-text="uncategorized.length"></span>
                         </div>
@@ -142,8 +137,7 @@
                                         <p class="text-[10px] text-stone-400 truncate" x-text="r.url"></p>
                                     </div>
                                     <button @click.stop="deleteSaved(r)"
-                                            title="DELETE"
-                                            class="opacity-0 group-hover:opacity-100 text-[10px] text-stone-400 hover:text-rose-500 px-1">✕</button>
+                                            class="opacity-0 group-hover:opacity-100 text-[10px] text-stone-400 hover:text-rose-500 px-1 font-bold">DEL</button>
                                 </div>
                             </template>
                         </div>
@@ -164,16 +158,12 @@
             </h1>
             <div class="ml-auto flex items-center gap-2">
                 <template x-if="currentSaved">
-                    <span class="text-xs px-2.5 py-1 rounded-full bg-orange-100 text-orange-700 font-bold flex items-center gap-1">
-                        <span>⭐</span>
-                        <span x-text="currentSaved.title"></span>
-                    </span>
+                    <span class="text-xs px-2.5 py-1 rounded-full bg-orange-100 text-orange-700 font-bold"
+                          x-text="currentSaved.title"></span>
                 </template>
                 <button @click="openSaveModal()"
-                        class="text-xs px-3 py-1.5 rounded-md border border-orange-300 text-orange-700 hover:bg-orange-50 transition-colors font-bold flex items-center gap-1">
-                    <span>💾</span>
-                    <span x-text="currentSaved ? 'UPDATE' : 'SAVE'"></span>
-                </button>
+                        class="text-xs px-3 py-1.5 rounded-md border border-orange-300 text-orange-700 hover:bg-orange-50 transition-colors font-bold"
+                        x-text="currentSaved ? 'UPDATE' : 'SAVE'"></button>
                 <button x-show="currentSaved"
                         @click="clearCurrentSaved()"
                         class="text-xs px-3 py-1.5 rounded-md border border-stone-300 text-stone-500 hover:bg-stone-50 transition-colors font-bold">
@@ -205,9 +195,8 @@
                        class="flex-1 bg-white border border-orange-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 placeholder-stone-300 text-stone-700 transition-all">
                 <button @click="sendRequest()"
                         :disabled="loading"
-                        class="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2">
-                    <span x-show="loading" class="animate-spin text-base">⟳</span>
-                    <span x-text="loading ? 'SENDING...' : 'SEND'"></span>
+                        class="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all"
+                        x-text="loading ? 'SENDING...' : 'SEND'">
                 </button>
             </div>
 
@@ -313,8 +302,7 @@
             </div>
 
             <div x-show="!response && !error && !loading"
-                 class="flex-1 flex flex-col items-center justify-center text-stone-300 text-sm gap-2">
-                <span class="text-5xl opacity-50">☕</span>
+                 class="flex-1 flex items-center justify-center text-stone-300 text-sm">
                 <span>SEND A REQUEST TO SEE THE RESPONSE HERE</span>
             </div>
 
@@ -362,10 +350,8 @@
      class="fixed inset-0 z-40 flex items-center justify-center bg-stone-900/40 backdrop-blur-sm px-4"
      x-transition.opacity>
     <div class="bg-white border border-orange-300 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
-        <h3 class="text-lg font-bold text-orange-700 uppercase tracking-wider flex items-center gap-2">
-            <span>💾</span>
-            <span x-text="saveModal.id ? 'UPDATE REQUEST' : 'SAVE REQUEST'"></span>
-        </h3>
+        <h3 class="text-lg font-bold text-orange-700 uppercase tracking-wider"
+            x-text="saveModal.id ? 'UPDATE REQUEST' : 'SAVE REQUEST'"></h3>
 
         <div class="space-y-1">
             <label class="text-xs text-stone-500 font-semibold uppercase">TITLE</label>
