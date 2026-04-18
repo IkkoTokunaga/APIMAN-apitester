@@ -103,6 +103,17 @@
 
             {{-- Headers tab --}}
             <div x-show="tab === 'headers'" class="space-y-2">
+                <div x-show="shouldShowContentType()" class="flex gap-2 items-center">
+                    <label class="text-xs text-stone-500 font-semibold w-32">Content-Type</label>
+                    <select x-model="form.contentType"
+                            class="flex-1 bg-white border border-orange-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 shadow-sm transition-all">
+                        <option value="application/json">application/json</option>
+                        <option value="application/x-www-form-urlencoded">application/x-www-form-urlencoded</option>
+                        <option value="multipart/form-data">multipart/form-data</option>
+                        <option value="text/plain">text/plain</option>
+                        <option value="application/xml">application/xml</option>
+                    </select>
+                </div>
                 <template x-for="(header, index) in form.headers" :key="index">
                     <div class="flex gap-2">
                         <input x-model="header.key"
@@ -200,7 +211,8 @@ function apiTester() {
         form: {
             method: 'GET',
             url: '',
-            headers: [{ key: 'Content-Type', value: 'application/json' }],
+            contentType: 'application/x-www-form-urlencoded',
+            headers: [],
             body: '',
         },
         response: null,
@@ -222,9 +234,19 @@ function apiTester() {
         headersToObject() {
             const obj = {};
             for (const h of this.form.headers) {
-                if (h.key.trim()) obj[h.key.trim()] = h.value.trim();
+                const key = h.key.trim();
+                if (!key) continue;
+                if (key.toLowerCase() === 'content-type') continue;
+                obj[key] = h.value.trim();
+            }
+            if (this.shouldShowContentType()) {
+                obj['Content-Type'] = this.form.contentType;
             }
             return obj;
+        },
+
+        shouldShowContentType() {
+            return this.form.method !== 'GET';
         },
 
         async sendRequest() {
@@ -273,10 +295,13 @@ function apiTester() {
             this.form.url    = h.url;
             this.form.body   = h.request_body ?? '';
             const hdrs = h.request_headers ?? {};
-            this.form.headers = Object.entries(hdrs).map(([k, v]) => ({ key: k, value: v }));
-            if (this.form.headers.length === 0) {
-                this.form.headers = [{ key: 'Content-Type', value: 'application/json' }];
-            }
+            const savedContentType = hdrs['Content-Type'] ?? hdrs['content-type'] ?? null;
+            this.form.contentType = typeof savedContentType === 'string' && savedContentType.trim()
+                ? savedContentType
+                : 'application/x-www-form-urlencoded';
+            this.form.headers = Object.entries(hdrs)
+                .filter(([k]) => k.toLowerCase() !== 'content-type')
+                .map(([k, v]) => ({ key: k, value: v }));
             this.response = {
                 status_code:      h.status_code,
                 response_body:    h.response_body,

@@ -42,12 +42,21 @@ as_www php "$APP_DIR/artisan" storage:link --force 2>/dev/null || true
 APP_ENV="${APP_ENV:-local}"
 
 if [ "$APP_ENV" = "local" ]; then
+    # Enable hot-reload-friendly OPcache behavior in development.
+    # (Dockerfile keeps production-oriented defaults.)
+    cat <<'EOF' > /usr/local/etc/php/conf.d/zz-opcache-dev.ini
+opcache.validate_timestamps=1
+opcache.revalidate_freq=0
+EOF
+
     # dev: install npm deps in case node_modules is missing
     if [ ! -d "$APP_DIR/node_modules" ]; then
         cd "$APP_DIR" && as_www npm install
     fi
     SUPERVISOR_CONF="/etc/supervisor/conf.d/supervisord.dev.conf"
 else
+    rm -f /usr/local/etc/php/conf.d/zz-opcache-dev.ini
+
     # production: cache configs
     as_www php "$APP_DIR/artisan" config:cache
     as_www php "$APP_DIR/artisan" route:cache
