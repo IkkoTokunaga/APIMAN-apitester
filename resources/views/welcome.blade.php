@@ -56,11 +56,10 @@
     <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
 
         {{-- Header --}}
-        <header class="px-7 py-4 border-b border-orange-200/70 flex items-center gap-3 bg-white/40 backdrop-blur-sm">
-            <span class="text-xl font-extrabold bg-gradient-to-r from-orange-500 to-amber-500 bg-clip-text text-transparent">
-                🍊 API Tester
-            </span>
-            <span class="text-xs text-stone-400">Laravel 12 / Alpine.js / Tailwind v4</span>
+        <header class="px-7 py-4 border-b border-orange-200/70 flex items-center bg-white/40 backdrop-blur-sm">
+            <h1 class="text-3xl uppercase tracking-wide leading-none text-orange-700 [font-family:'Impact','Arial_Black','Helvetica_Neue',sans-serif] [font-weight:900]">
+                API - TESTER
+            </h1>
         </header>
 
         {{-- Request form --}}
