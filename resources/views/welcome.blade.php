@@ -14,24 +14,22 @@
 
 <div class="flex h-full">
 
-    {{-- ======== Sidebar: 履歴 ======== --}}
-    <aside class="w-72 bg-orange-50/70 backdrop-blur-sm border-r border-orange-200/70 flex flex-col shrink-0">
-        <div class="flex items-center justify-between px-5 py-4 border-b border-orange-200/70">
+    {{-- ======== Sidebar: History ======== --}}
+    <aside class="w-72 bg-orange-50 border-r border-orange-300 flex flex-col shrink-0">
+        <div class="flex items-center justify-between px-5 py-4 border-b border-orange-300">
             <h2 class="text-xs font-bold uppercase tracking-widest text-orange-500 flex items-center gap-1.5">
-                <span class="text-sm">🕒</span> 履歴
+                <span class="text-sm">🕒</span> HISTORY
             </h2>
-            <button @click="clearHistory()"
-                    class="text-xs text-rose-400 hover:text-rose-500 hover:bg-rose-50 px-2 py-1 rounded-full transition-colors">全削除</button>
         </div>
 
         <div class="overflow-y-auto flex-1 scrollbar-warm px-2 py-2">
             <template x-if="histories.length === 0">
-                <p class="px-4 py-8 text-xs text-stone-400 text-center">履歴はまだありません</p>
+                <p class="px-4 py-8 text-xs text-stone-400 text-center">NO HISTORY YET</p>
             </template>
 
             <template x-for="h in histories" :key="h.id">
                 <div @click="loadFromHistory(h.id)"
-                     class="flex items-start gap-2 px-3 py-2.5 my-1 rounded-xl hover:bg-white hover:shadow-sm cursor-pointer transition-all group border border-transparent hover:border-orange-200/70">
+                     class="flex items-start gap-2 px-3 py-2.5 my-1 rounded-xl hover:bg-white cursor-pointer transition-all group border border-transparent hover:border-orange-300">
                     <span :class="methodBadgeClass(h.method)"
                           class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full mt-0.5 w-14 text-center"
                           x-text="h.method"></span>
@@ -45,8 +43,6 @@
                                   x-text="h.duration_ms ? h.duration_ms + 'ms' : ''"></span>
                         </div>
                     </div>
-                    <button @click.stop="deleteHistory(h.id)"
-                            class="shrink-0 text-stone-300 group-hover:text-stone-400 hover:!text-rose-500 transition-colors text-xs ml-1">✕</button>
                 </div>
             </template>
         </div>
@@ -56,19 +52,20 @@
     <main class="flex-1 flex flex-col min-w-0 overflow-hidden">
 
         {{-- Header --}}
-        <header class="px-7 py-4 border-b border-orange-200/70 flex items-center bg-white/40 backdrop-blur-sm">
+        <header class="px-7 py-4 border-b border-orange-300 flex items-center bg-white">
             <h1 class="text-3xl uppercase tracking-wide leading-none text-orange-700 [font-family:'Impact','Arial_Black','Helvetica_Neue',sans-serif] [font-weight:900]">
                 API - TESTER
             </h1>
         </header>
 
         {{-- Request form --}}
-        <section class="px-7 py-5 border-b border-orange-200/70 space-y-4 bg-gradient-to-b from-orange-50/30 to-transparent">
+        <section class="px-7 py-5 border-b border-orange-300 space-y-4 bg-orange-50/40">
 
             {{-- Method + URL --}}
             <div class="flex gap-2">
                 <select x-model="form.method"
-                        class="bg-white border border-orange-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200 text-orange-600 font-bold w-28 shadow-sm transition-all">
+                        @change="handleMethodChange()"
+                        class="bg-white border border-orange-300 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 text-orange-700 font-bold w-28 transition-all">
                     <option>GET</option>
                     <option>POST</option>
                     <option>PUT</option>
@@ -81,35 +78,34 @@
                        @keydown.enter="sendRequest()"
                        type="url"
                        placeholder="https://api.example.com/endpoint"
-                       class="flex-1 bg-white border border-orange-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-200 placeholder-stone-300 text-stone-700 shadow-sm transition-all">
+                       class="flex-1 bg-white border border-orange-300 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 placeholder-stone-300 text-stone-700 transition-all">
                 <button @click="sendRequest()"
                         :disabled="loading"
-                        class="bg-gradient-to-r from-orange-400 to-amber-400 hover:from-orange-500 hover:to-amber-500 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2 shadow-md hover:shadow-lg shadow-orange-200">
+                        class="bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white px-6 py-2.5 rounded-xl text-sm font-bold transition-all flex items-center gap-2">
                     <span x-show="loading" class="animate-spin text-base">⟳</span>
-                    <span x-text="loading ? '送信中...' : '送信'"></span>
+                    <span x-text="loading ? 'SENDING...' : 'SEND'"></span>
                 </button>
             </div>
 
             {{-- Tabs --}}
-            <div class="flex gap-1 border-b border-orange-200/60">
+            <div class="flex gap-1 border-b border-orange-300">
                 <button @click="tab = 'headers'"
                         :class="tab === 'headers' ? 'border-orange-400 text-orange-600' : 'border-transparent text-stone-400 hover:text-stone-600'"
-                        class="text-xs px-3 py-2 border-b-2 transition-colors font-semibold">ヘッダー</button>
+                        class="text-xs px-3 py-2 border-b-2 transition-colors font-bold">HEADERS</button>
                 <button @click="tab = 'body'"
+                        x-show="canHaveBody()"
                         :class="tab === 'body' ? 'border-orange-400 text-orange-600' : 'border-transparent text-stone-400 hover:text-stone-600'"
-                        class="text-xs px-3 py-2 border-b-2 transition-colors font-semibold">
-                    <span>ボディ</span>
-                    <span class="text-stone-300 font-normal"
-                          x-text="isFormUrlEncoded() ? '(Form)' : '(JSON)'"></span>
+                        class="text-xs px-3 py-2 border-b-2 transition-colors font-bold">
+                    <span>BODY</span>
                 </button>
             </div>
 
             {{-- Headers tab --}}
             <div x-show="tab === 'headers'" class="space-y-2">
                 <div x-show="shouldShowContentType()" class="flex gap-2 items-center">
-                    <label class="text-xs text-stone-500 font-semibold w-32">Content-Type</label>
+                    <label class="text-xs text-stone-500 font-semibold w-32">CONTENT-TYPE</label>
                     <select x-model="form.contentType"
-                            class="flex-1 bg-white border border-orange-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 shadow-sm transition-all">
+                            class="flex-1 bg-white border border-orange-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all">
                         <option value="application/json">application/json</option>
                         <option value="application/x-www-form-urlencoded">application/x-www-form-urlencoded</option>
                         <option value="multipart/form-data">multipart/form-data</option>
@@ -120,57 +116,53 @@
                 <template x-for="(header, index) in form.headers" :key="index">
                     <div class="flex gap-2">
                         <input x-model="header.key"
-                               placeholder="Key (例: Authorization)"
-                               class="flex-1 bg-white border border-orange-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 placeholder-stone-300 shadow-sm transition-all">
+                               placeholder="key"
+                               class="flex-1 bg-white border border-orange-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 placeholder-stone-300 transition-all">
                         <input x-model="header.value"
-                               placeholder="Value (例: Bearer token)"
-                               class="flex-1 bg-white border border-orange-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 placeholder-stone-300 shadow-sm transition-all">
+                               placeholder="value"
+                               class="flex-1 bg-white border border-orange-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 placeholder-stone-300 transition-all">
                         <button @click="removeHeader(index)"
-                                class="text-stone-300 hover:text-rose-500 transition-colors text-sm px-1">✕</button>
+                                class="text-[10px] px-2 py-1 rounded-md border border-rose-300 text-rose-600 hover:bg-rose-50 transition-colors">DELETE</button>
                     </div>
                 </template>
                 <button @click="addHeader()"
-                        class="text-xs text-orange-500 hover:text-orange-600 hover:bg-orange-50 px-3 py-1.5 rounded-full transition-colors font-semibold">+ ヘッダーを追加</button>
+                        class="text-xs px-3 py-1.5 rounded-md border border-orange-300 text-orange-700 hover:bg-orange-50 transition-colors font-bold">ADD</button>
             </div>
 
             {{-- Body tab --}}
-            <div x-show="tab === 'body'">
-                {{-- JSON / Plain text など --}}
+            <div x-show="tab === 'body' && canHaveBody()">
+                {{-- JSON / plain text, etc. --}}
                 <div x-show="!isFormUrlEncoded()">
                     <textarea x-model="form.body"
                               placeholder='{"key": "value"}'
                               rows="5"
-                              class="w-full bg-white border border-orange-200 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 placeholder-stone-300 resize-y font-mono text-stone-700 shadow-sm transition-all"></textarea>
+                              class="w-full bg-white border border-orange-300 rounded-xl px-4 py-3 text-xs focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 placeholder-stone-300 resize-y font-mono text-stone-700 transition-all"></textarea>
                     <div class="flex gap-2 mt-2">
                         <button @click="formatBody()"
-                                class="text-xs text-stone-500 hover:text-orange-600 hover:bg-orange-50 px-3 py-1 rounded-full transition-colors font-semibold">JSON整形</button>
-                        <button @click="form.body = ''"
-                                class="text-xs text-stone-500 hover:text-rose-500 hover:bg-rose-50 px-3 py-1 rounded-full transition-colors font-semibold">クリア</button>
+                                class="text-xs text-stone-500 hover:text-orange-600 hover:bg-orange-50 px-3 py-1 rounded-full transition-colors font-semibold">FORMAT JSON</button>
                     </div>
                 </div>
 
                 {{-- application/x-www-form-urlencoded --}}
                 <div x-show="isFormUrlEncoded()" class="space-y-2">
                     <template x-if="form.formFields.length === 0">
-                        <p class="text-xs text-stone-400 py-2">Key / Value を追加してください</p>
+                        <p class="text-xs text-stone-400 py-2">ADD KEY / VALUE PAIRS</p>
                     </template>
                     <template x-for="(field, index) in form.formFields" :key="index">
                         <div class="flex gap-2">
                             <input x-model="field.key"
-                                   placeholder="Key (例: username)"
-                                   class="flex-1 bg-white border border-orange-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 placeholder-stone-300 shadow-sm transition-all">
+                                   placeholder="key"
+                                   class="flex-1 bg-white border border-orange-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 placeholder-stone-300 transition-all">
                             <input x-model="field.value"
-                                   placeholder="Value (例: john)"
-                                   class="flex-1 bg-white border border-orange-200 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100 placeholder-stone-300 shadow-sm transition-all">
+                                   placeholder="value"
+                                   class="flex-1 bg-white border border-orange-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 placeholder-stone-300 transition-all">
                             <button @click="removeFormField(index)"
-                                    class="text-stone-300 hover:text-rose-500 transition-colors text-sm px-1">✕</button>
+                                    class="text-[10px] px-2 py-1 rounded-md border border-rose-300 text-rose-600 hover:bg-rose-50 transition-colors">DELETE</button>
                         </div>
                     </template>
                     <div class="flex gap-2">
                         <button @click="addFormField()"
-                                class="text-xs text-orange-500 hover:text-orange-600 hover:bg-orange-50 px-3 py-1.5 rounded-full transition-colors font-semibold">+ フィールドを追加</button>
-                        <button @click="form.formFields = []"
-                                class="text-xs text-stone-500 hover:text-rose-500 hover:bg-rose-50 px-3 py-1.5 rounded-full transition-colors font-semibold">クリア</button>
+                                class="text-xs px-3 py-1.5 rounded-md border border-orange-300 text-orange-700 hover:bg-orange-50 transition-colors font-bold">ADD</button>
                     </div>
                 </div>
             </div>
@@ -179,50 +171,56 @@
 
         {{-- Response --}}
         <section class="flex-1 overflow-hidden flex flex-col min-h-0 px-7 py-5">
+            <div class="mb-3">
+                <h2 class="text-xs font-bold uppercase tracking-widest text-stone-500">RESPONSE</h2>
+            </div>
 
             <div x-show="!response && !error && !loading"
                  class="flex-1 flex flex-col items-center justify-center text-stone-300 text-sm gap-2">
                 <span class="text-5xl opacity-50">☕</span>
-                <span>リクエストを送信するとレスポンスがここに表示されます</span>
+                <span>SEND A REQUEST TO SEE THE RESPONSE HERE</span>
             </div>
 
             <div x-show="loading"
                  class="flex-1 flex items-center justify-center text-orange-500 text-sm animate-pulse font-semibold">
-                リクエスト送信中...
+                SENDING REQUEST...
             </div>
 
             <template x-if="response || error">
                 <div class="flex-1 flex flex-col min-h-0 space-y-3">
 
                     {{-- Status bar --}}
-                    <div class="flex items-center gap-4 text-sm">
-                        <span :class="statusBadgeClass(response?.status_code)"
-                              class="font-extrabold text-base"
-                              x-text="response?.status_code ? 'HTTP ' + response.status_code : '接続エラー'"></span>
-                        <span class="text-stone-400 text-xs"
-                              x-text="response?.duration_ms ? response.duration_ms + ' ms' : ''"></span>
-                        <span x-show="error" class="text-rose-500 text-xs" x-text="error"></span>
+                    <div class="flex items-center justify-between gap-3 text-sm">
+                        <span x-show="error" class="text-rose-500 text-xs font-semibold" x-text="error"></span>
+                        <div class="ml-auto flex items-center gap-2">
+                            <span :class="statusBadgeClass(response?.status_code)"
+                                  class="px-2.5 py-1 rounded-full border border-orange-300 bg-white text-xs font-bold"
+                                  x-text="response?.status_code ? 'HTTP ' + response.status_code : 'CONNECTION ERROR'"></span>
+                            <span x-show="response?.duration_ms"
+                                  class="px-2.5 py-1 rounded-full border border-orange-300 bg-white text-stone-600 text-xs font-bold"
+                                  x-text="response.duration_ms + ' MS'"></span>
+                        </div>
                     </div>
 
                     {{-- Response tabs --}}
-                    <div class="flex gap-1 border-b border-orange-200/60">
+                    <div class="flex gap-1 border-b border-orange-300">
                         <button @click="resTab = 'body'"
                                 :class="resTab === 'body' ? 'border-orange-400 text-orange-600' : 'border-transparent text-stone-400'"
-                                class="text-xs px-3 py-2 border-b-2 transition-colors hover:text-stone-600 font-semibold">ボディ</button>
+                                class="text-xs px-3 py-2 border-b-2 transition-colors hover:text-stone-600 font-bold">BODY</button>
                         <button @click="resTab = 'headers'"
                                 :class="resTab === 'headers' ? 'border-orange-400 text-orange-600' : 'border-transparent text-stone-400'"
-                                class="text-xs px-3 py-2 border-b-2 transition-colors hover:text-stone-600 font-semibold">レスポンスヘッダー</button>
+                                class="text-xs px-3 py-2 border-b-2 transition-colors hover:text-stone-600 font-bold">HEADERS</button>
                     </div>
 
                     {{-- Response body --}}
                     <div x-show="resTab === 'body'" class="flex-1 overflow-auto min-h-0 scrollbar-warm">
-                        <pre class="text-xs text-stone-700 bg-white border border-orange-100 rounded-2xl p-4 overflow-auto h-full whitespace-pre-wrap break-all font-mono shadow-sm scrollbar-warm"
+                        <pre class="text-xs text-stone-700 bg-white border border-orange-300 rounded-2xl p-4 overflow-auto h-full whitespace-pre-wrap break-all font-mono scrollbar-warm"
                              x-text="prettyBody(response?.response_body)"></pre>
                     </div>
 
                     {{-- Response headers --}}
                     <div x-show="resTab === 'headers'" class="flex-1 overflow-auto min-h-0 scrollbar-warm">
-                        <pre class="text-xs text-stone-600 bg-white border border-orange-100 rounded-2xl p-4 overflow-auto h-full whitespace-pre-wrap font-mono shadow-sm scrollbar-warm"
+                        <pre class="text-xs text-stone-600 bg-white border border-orange-300 rounded-2xl p-4 overflow-auto h-full whitespace-pre-wrap font-mono scrollbar-warm"
                              x-text="prettyHeaders(response?.response_headers)"></pre>
                     </div>
                 </div>
@@ -319,6 +317,16 @@ function apiTester() {
             return this.form.method !== 'GET';
         },
 
+        canHaveBody() {
+            return this.form.method !== 'GET';
+        },
+
+        handleMethodChange() {
+            if (!this.canHaveBody() && this.tab === 'body') {
+                this.tab = 'headers';
+            }
+        },
+
         async sendRequest() {
             if (!this.form.url) return;
             this.loading = true;
@@ -381,24 +389,6 @@ function apiTester() {
                 response_headers: h.response_headers,
                 duration_ms:      h.duration_ms,
             };
-        },
-
-        async deleteHistory(id) {
-            await fetch('/api/history/' + id, {
-                method: 'DELETE',
-                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-            });
-            this.loadHistory();
-        },
-
-        async clearHistory() {
-            if (!confirm('すべての履歴を削除しますか？')) return;
-            await fetch('/api/history', {
-                method: 'DELETE',
-                headers: { 'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content },
-            });
-            this.histories = [];
-            if (this.response) this.response = null;
         },
 
         prettyBody(body) {
