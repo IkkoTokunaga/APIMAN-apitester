@@ -153,12 +153,21 @@
                             </template>
                             <template x-for="r in c.saved_requests" :key="r.id">
                                 <div @click="loadFromSaved(r.id)"
-                                     class="flex items-start gap-2 px-2 py-1.5 my-0.5 rounded-lg hover:bg-orange-100/70 cursor-pointer transition-all group border border-transparent hover:border-orange-300">
+                                     :class="isCurrentSaved(r.id)
+                                         ? 'bg-orange-200/70 border-orange-400 ring-1 ring-orange-400 shadow-sm'
+                                         : 'border-transparent hover:bg-orange-100/70 hover:border-orange-300'"
+                                     class="flex items-start gap-2 px-2 py-1.5 my-0.5 rounded-lg cursor-pointer transition-all group border">
                                     <span :class="methodBadgeClass(r.method)"
                                           class="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full mt-0.5 w-14 text-center"
                                           x-text="r.method"></span>
                                     <div class="min-w-0 flex-1">
-                                        <p class="text-xs text-stone-700 truncate font-semibold" x-text="r.title"></p>
+                                        <div class="flex items-center gap-1">
+                                            <span x-show="isCurrentSaved(r.id)"
+                                                  class="shrink-0 text-orange-600 text-[10px] leading-none">●</span>
+                                            <p class="text-xs truncate font-semibold"
+                                               :class="isCurrentSaved(r.id) ? 'text-orange-700' : 'text-stone-700'"
+                                               x-text="r.title"></p>
+                                        </div>
                                         <p class="text-[10px] text-stone-400 truncate" x-text="r.url"></p>
                                     </div>
                                     <button @click.stop="deleteSaved(r)"
@@ -182,12 +191,21 @@
                         <div x-show="!collapsed['__uncat__']" class="pl-3">
                             <template x-for="r in uncategorized" :key="r.id">
                                 <div @click="loadFromSaved(r.id)"
-                                     class="flex items-start gap-2 px-2 py-1.5 my-0.5 rounded-lg hover:bg-orange-100/70 cursor-pointer transition-all group border border-transparent hover:border-orange-300">
+                                     :class="isCurrentSaved(r.id)
+                                         ? 'bg-orange-200/70 border-orange-400 ring-1 ring-orange-400 shadow-sm'
+                                         : 'border-transparent hover:bg-orange-100/70 hover:border-orange-300'"
+                                     class="flex items-start gap-2 px-2 py-1.5 my-0.5 rounded-lg cursor-pointer transition-all group border">
                                     <span :class="methodBadgeClass(r.method)"
                                           class="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full mt-0.5 w-14 text-center"
                                           x-text="r.method"></span>
                                     <div class="min-w-0 flex-1">
-                                        <p class="text-xs text-stone-700 truncate font-semibold" x-text="r.title"></p>
+                                        <div class="flex items-center gap-1">
+                                            <span x-show="isCurrentSaved(r.id)"
+                                                  class="shrink-0 text-orange-600 text-[10px] leading-none">●</span>
+                                            <p class="text-xs truncate font-semibold"
+                                               :class="isCurrentSaved(r.id) ? 'text-orange-700' : 'text-stone-700'"
+                                               x-text="r.title"></p>
+                                        </div>
                                         <p class="text-[10px] text-stone-400 truncate" x-text="r.url"></p>
                                     </div>
                                     <button @click.stop="deleteSaved(r)"
@@ -963,6 +981,10 @@ function apiTester() {
                 this.currentSaved = null;
             }
             await this.loadCollections();
+        },
+
+        isCurrentSaved(id) {
+            return !!(this.currentSaved && this.currentSaved.id === id);
         },
 
         async loadFromSaved(id) {
