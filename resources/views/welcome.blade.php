@@ -678,7 +678,7 @@
 <script>
 function apiTester() {
     return {
-        tab: 'body',
+        tab: 'headers',
         resTab: 'body',
         sideTab: 'saved',
         loading: false,
@@ -891,6 +891,7 @@ function apiTester() {
             this.form.formFields = this.isFormUrlEncoded()
                 ? this.parseUrlEncodedBody(this.form.body)
                 : [];
+            this.tab = this.canHaveBody() ? 'body' : 'headers';
         },
 
         async loadFromHistory(id) {
