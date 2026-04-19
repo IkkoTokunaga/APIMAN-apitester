@@ -8,6 +8,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" defer></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
 <body class="h-full text-stone-700 font-sans antialiased" x-data="apiTester()" x-init="init()">
@@ -168,6 +169,15 @@
                         @click="clearCurrentSaved()"
                         class="text-xs px-3 py-1.5 rounded-md border border-stone-300 text-stone-500 hover:bg-stone-50 transition-colors font-bold">
                     NEW
+                </button>
+                <button @click="openSettings()"
+                        title="SETTINGS"
+                        class="ml-1 w-9 h-9 flex items-center justify-center rounded-full border border-orange-300 text-orange-700 hover:bg-orange-50 hover:rotate-45 transition-all duration-300">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                    </svg>
                 </button>
             </div>
         </header>
@@ -397,6 +407,139 @@
     </div>
 </div>
 
+{{-- ======== Settings Modal ======== --}}
+<div x-show="settingsModal.open"
+     x-cloak
+     @keydown.escape.window="settingsModal.open = false"
+     class="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-sm px-4"
+     x-transition.opacity>
+    <div class="bg-white border border-orange-300 rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
+
+        {{-- Modal header --}}
+        <div class="px-6 py-4 border-b border-orange-300 flex items-center">
+            <h3 class="text-lg font-bold text-orange-700 uppercase tracking-wider">SETTINGS</h3>
+            <button @click="settingsModal.open = false"
+                    class="ml-auto text-stone-400 hover:text-stone-600 text-xl leading-none">×</button>
+        </div>
+
+        {{-- Tabs --}}
+        <div class="flex border-b border-orange-300 px-4">
+            <button @click="settingsModal.tab = 'variables'"
+                    :class="settingsModal.tab === 'variables' ? 'border-orange-500 text-orange-600' : 'border-transparent text-stone-400 hover:text-stone-600'"
+                    class="text-xs font-bold uppercase tracking-widest py-3 px-4 border-b-2 transition-all">
+                VARIABLES
+            </button>
+            <button @click="settingsModal.tab = 'import'"
+                    :class="settingsModal.tab === 'import' ? 'border-orange-500 text-orange-600' : 'border-transparent text-stone-400 hover:text-stone-600'"
+                    class="text-xs font-bold uppercase tracking-widest py-3 px-4 border-b-2 transition-all">
+                IMPORT
+            </button>
+            <button @click="settingsModal.tab = 'export'"
+                    :class="settingsModal.tab === 'export' ? 'border-orange-500 text-orange-600' : 'border-transparent text-stone-400 hover:text-stone-600'"
+                    class="text-xs font-bold uppercase tracking-widest py-3 px-4 border-b-2 transition-all">
+                EXPORT
+            </button>
+        </div>
+
+        {{-- Tab body --}}
+        <div class="flex-1 overflow-y-auto scrollbar-warm px-6 py-5">
+
+            {{-- Variables tab --}}
+            <div x-show="settingsModal.tab === 'variables'" class="space-y-3">
+                <p class="text-xs text-stone-500 leading-relaxed">
+                    URL/HEADER/BODY 内で <code class="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded text-[11px] font-mono">&#123;&#123;NAME&#125;&#125;</code> と書くと値で置換されます。<br>
+                    （変数はブラウザの localStorage に保存されます）
+                </p>
+
+                <template x-if="variables.length === 0">
+                    <p class="text-xs text-stone-400 py-4 text-center">NO VARIABLES YET</p>
+                </template>
+
+                <template x-for="(v, index) in variables" :key="index">
+                    <div class="flex gap-2 items-center">
+                        <input x-model="v.key"
+                               @input="saveVariables()"
+                               placeholder="name"
+                               class="flex-1 bg-white border border-orange-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 placeholder-stone-300 font-mono transition-all">
+                        <span class="text-stone-300 text-xs">=</span>
+                        <input x-model="v.value"
+                               @input="saveVariables()"
+                               placeholder="value"
+                               class="flex-1 bg-white border border-orange-300 rounded-lg px-3 py-2 text-xs focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 placeholder-stone-300 font-mono transition-all">
+                        <button @click="removeVariable(index)"
+                                class="text-[10px] px-2 py-1 rounded-md border border-rose-300 text-rose-600 hover:bg-rose-50 transition-colors font-bold">DELETE</button>
+                    </div>
+                </template>
+
+                <button @click="addVariable()"
+                        class="text-xs px-3 py-1.5 rounded-md border border-orange-300 text-orange-700 hover:bg-orange-50 transition-colors font-bold">
+                    + ADD VARIABLE
+                </button>
+            </div>
+
+            {{-- Import tab --}}
+            <div x-show="settingsModal.tab === 'import'" class="space-y-4">
+                <p class="text-xs text-stone-500 leading-relaxed">
+                    エクスポートした JSON ファイル（複数選択可）または ZIP ファイルから一括インポートします。<br>
+                    JSON の <code class="bg-orange-100 text-orange-700 px-1.5 py-0.5 rounded text-[11px] font-mono">collection</code> 項目に基づいてコレクションも自動作成されます。
+                </p>
+
+                <label class="block">
+                    <span class="text-xs text-stone-500 font-semibold uppercase">SELECT FILES</span>
+                    <input type="file"
+                           multiple
+                           accept=".json,.zip,application/json,application/zip"
+                           @change="handleImportFiles($event)"
+                           class="mt-2 block w-full text-xs text-stone-600
+                                  file:mr-3 file:py-2 file:px-4
+                                  file:rounded-md file:border file:border-orange-300
+                                  file:text-xs file:font-bold file:uppercase
+                                  file:bg-orange-50 file:text-orange-700
+                                  hover:file:bg-orange-100 file:cursor-pointer cursor-pointer">
+                </label>
+
+                <template x-if="importStatus.message">
+                    <div :class="importStatus.error
+                                  ? 'bg-rose-50 border-rose-300 text-rose-700'
+                                  : 'bg-emerald-50 border-emerald-300 text-emerald-700'"
+                         class="border rounded-lg px-3 py-2 text-xs"
+                         x-text="importStatus.message"></div>
+                </template>
+            </div>
+
+            {{-- Export tab --}}
+            <div x-show="settingsModal.tab === 'export'" class="space-y-4">
+                <p class="text-xs text-stone-500 leading-relaxed">
+                    保存済みのリクエストを全て ZIP ファイルとしてダウンロードします。<br>
+                    1リクエスト = 1 JSON ファイルとして格納され、そのままインポートに利用できます。
+                </p>
+
+                <button @click="exportAll()"
+                        :disabled="exportStatus.loading"
+                        class="text-sm px-4 py-2.5 rounded-md bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-colors font-bold">
+                    <span x-text="exportStatus.loading ? 'EXPORTING...' : 'DOWNLOAD ALL AS ZIP'"></span>
+                </button>
+
+                <template x-if="exportStatus.message">
+                    <div :class="exportStatus.error
+                                  ? 'bg-rose-50 border-rose-300 text-rose-700'
+                                  : 'bg-emerald-50 border-emerald-300 text-emerald-700'"
+                         class="border rounded-lg px-3 py-2 text-xs"
+                         x-text="exportStatus.message"></div>
+                </template>
+            </div>
+        </div>
+
+        {{-- Modal footer --}}
+        <div class="px-6 py-3 border-t border-orange-300 flex justify-end bg-orange-50/40">
+            <button @click="settingsModal.open = false"
+                    class="text-xs px-4 py-2 rounded-md border border-stone-300 text-stone-600 hover:bg-white transition-colors font-bold">
+                CLOSE
+            </button>
+        </div>
+    </div>
+</div>
+
 <script>
 function apiTester() {
     return {
@@ -431,9 +574,19 @@ function apiTester() {
             newCollectionName: '',
         },
 
+        // ===== Settings (gear icon) =====
+        settingsModal: {
+            open: false,
+            tab: 'variables',
+        },
+        variables: [], // [{ key, value }]
+        importStatus: { message: '', error: false },
+        exportStatus: { message: '', error: false, loading: false },
+
         init() {
             this.loadHistory();
             this.loadCollections();
+            this.loadVariables();
         },
 
         addHeader() {
@@ -459,17 +612,18 @@ function apiTester() {
                 && this.form.contentType === 'application/x-www-form-urlencoded';
         },
 
-        buildBody() {
+        buildBody(substitute = false) {
+            const sub = (s) => substitute ? this.substituteVars(s) : s;
             if (this.isFormUrlEncoded()) {
                 const params = new URLSearchParams();
                 for (const f of this.form.formFields) {
                     const key = (f.key ?? '').trim();
                     if (!key) continue;
-                    params.append(key, f.value ?? '');
+                    params.append(sub(key), sub(f.value ?? ''));
                 }
                 return params.toString();
             }
-            return this.form.body;
+            return sub(this.form.body);
         },
 
         parseUrlEncodedBody(body) {
@@ -524,6 +678,12 @@ function apiTester() {
             this.response = null;
             this.error = null;
             try {
+                const headersObj = this.headersToObject();
+                const substitutedHeaders = {};
+                for (const [k, v] of Object.entries(headersObj)) {
+                    substitutedHeaders[this.substituteVars(k)] = this.substituteVars(v);
+                }
+
                 const res = await fetch('/api/proxy', {
                     method: 'POST',
                     headers: {
@@ -532,9 +692,9 @@ function apiTester() {
                     },
                     body: JSON.stringify({
                         method:  this.form.method,
-                        url:     this.form.url,
-                        headers: this.headersToObject(),
-                        body:    this.buildBody(),
+                        url:     this.substituteVars(this.form.url),
+                        headers: substitutedHeaders,
+                        body:    this.buildBody(true),
                     }),
                 });
                 const data = await res.json();
@@ -812,6 +972,217 @@ function apiTester() {
             if (code < 400) return 'text-amber-600';
             if (code < 500) return 'text-orange-600';
             return 'text-rose-500';
+        },
+
+        // ===== Settings: open/close =====
+
+        openSettings() {
+            this.importStatus = { message: '', error: false };
+            this.exportStatus = { message: '', error: false, loading: false };
+            this.settingsModal.open = true;
+        },
+
+        // ===== Variables (localStorage) =====
+
+        loadVariables() {
+            try {
+                const raw = localStorage.getItem('apiTester.variables');
+                const parsed = raw ? JSON.parse(raw) : [];
+                this.variables = Array.isArray(parsed) ? parsed : [];
+            } catch {
+                this.variables = [];
+            }
+        },
+
+        saveVariables() {
+            try {
+                localStorage.setItem('apiTester.variables', JSON.stringify(this.variables));
+            } catch {}
+        },
+
+        addVariable() {
+            this.variables.push({ key: '', value: '' });
+            this.saveVariables();
+        },
+
+        removeVariable(index) {
+            this.variables.splice(index, 1);
+            this.saveVariables();
+        },
+
+        substituteVars(input) {
+            if (typeof input !== 'string' || input === '') return input;
+            const map = {};
+            for (const v of this.variables) {
+                const k = (v.key ?? '').trim();
+                if (!k) continue;
+                map[k] = v.value ?? '';
+            }
+            return input.replace(/\{\{\s*([^{}\s]+)\s*\}\}/g, (match, name) => {
+                return Object.prototype.hasOwnProperty.call(map, name) ? map[name] : match;
+            });
+        },
+
+        // ===== Import =====
+
+        async handleImportFiles(event) {
+            const files = Array.from(event.target.files || []);
+            event.target.value = '';
+            if (files.length === 0) return;
+
+            this.importStatus = { message: 'READING FILES...', error: false };
+
+            const items = [];
+            const errors = [];
+
+            try {
+                for (const file of files) {
+                    const lower = file.name.toLowerCase();
+                    if (lower.endsWith('.zip')) {
+                        if (typeof JSZip === 'undefined') {
+                            throw new Error('JSZip is not loaded yet. Please retry.');
+                        }
+                        const buf = await file.arrayBuffer();
+                        const zip = await JSZip.loadAsync(buf);
+                        const entries = Object.values(zip.files).filter(
+                            f => !f.dir && f.name.toLowerCase().endsWith('.json')
+                        );
+                        for (const entry of entries) {
+                            try {
+                                const text = await entry.async('string');
+                                const obj = JSON.parse(text);
+                                items.push(this.normalizeImportItem(obj, entry.name));
+                            } catch (e) {
+                                errors.push(`${file.name}/${entry.name}: ${e.message}`);
+                            }
+                        }
+                    } else {
+                        try {
+                            const text = await file.text();
+                            const obj = JSON.parse(text);
+                            items.push(this.normalizeImportItem(obj, file.name));
+                        } catch (e) {
+                            errors.push(`${file.name}: ${e.message}`);
+                        }
+                    }
+                }
+
+                if (items.length === 0) {
+                    this.importStatus = {
+                        message: 'NO VALID REQUESTS FOUND.' + (errors.length ? ' (' + errors.length + ' ERRORS)' : ''),
+                        error: true,
+                    };
+                    return;
+                }
+
+                const res = await fetch('/api/saved-requests/import', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': this.csrf(),
+                    },
+                    body: JSON.stringify({ items }),
+                });
+
+                if (!res.ok) {
+                    const data = await res.json().catch(() => ({}));
+                    throw new Error(data.message || ('HTTP ' + res.status));
+                }
+
+                const data = await res.json();
+                let msg = `IMPORTED ${data.imported} REQUEST(S).`;
+                if (errors.length) msg += ` (${errors.length} FILE(S) SKIPPED)`;
+                this.importStatus = { message: msg, error: false };
+
+                await this.loadCollections();
+            } catch (e) {
+                this.importStatus = { message: 'IMPORT FAILED: ' + e.message, error: true };
+            }
+        },
+
+        normalizeImportItem(obj, sourceName) {
+            if (!obj || typeof obj !== 'object') {
+                throw new Error('not a JSON object');
+            }
+            if (!obj.method || !obj.url) {
+                throw new Error('missing method or url');
+            }
+            return {
+                title:           obj.title || sourceName.replace(/\.json$/i, ''),
+                method:          String(obj.method).toUpperCase(),
+                url:             String(obj.url),
+                request_headers: (obj.request_headers && typeof obj.request_headers === 'object') ? obj.request_headers : null,
+                request_body:    obj.request_body ?? null,
+                content_type:    obj.content_type ?? null,
+                collection:      obj.collection ?? null,
+            };
+        },
+
+        // ===== Export =====
+
+        async exportAll() {
+            this.exportStatus = { message: '', error: false, loading: true };
+            try {
+                if (typeof JSZip === 'undefined') {
+                    throw new Error('JSZip is not loaded yet. Please retry.');
+                }
+
+                const res = await fetch('/api/saved-requests/export');
+                if (!res.ok) throw new Error('HTTP ' + res.status);
+                const data = await res.json();
+                const items = data.items || [];
+
+                if (items.length === 0) {
+                    this.exportStatus = { message: 'NO SAVED REQUESTS TO EXPORT.', error: true, loading: false };
+                    return;
+                }
+
+                const zip = new JSZip();
+                const usedNames = new Set();
+
+                for (const item of items) {
+                    const colDir = item.collection ? this.slugify(item.collection) : '_uncategorized';
+                    const baseName = this.slugify(item.title || 'request') || 'request';
+
+                    let fileName = `${colDir}/${baseName}.json`;
+                    let counter = 2;
+                    while (usedNames.has(fileName)) {
+                        fileName = `${colDir}/${baseName}-${counter}.json`;
+                        counter++;
+                    }
+                    usedNames.add(fileName);
+
+                    zip.file(fileName, JSON.stringify(item, null, 2));
+                }
+
+                const blob = await zip.generateAsync({ type: 'blob' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                const ts = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+                a.href = url;
+                a.download = `api-tester-export-${ts}.zip`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+
+                this.exportStatus = {
+                    message: `EXPORTED ${items.length} REQUEST(S).`,
+                    error: false,
+                    loading: false,
+                };
+            } catch (e) {
+                this.exportStatus = { message: 'EXPORT FAILED: ' + e.message, error: true, loading: false };
+            }
+        },
+
+        slugify(s) {
+            return String(s)
+                .normalize('NFKD')
+                .replace(/[^\w\s\-\.]/g, '')
+                .trim()
+                .replace(/\s+/g, '_')
+                .slice(0, 80);
         },
     };
 }

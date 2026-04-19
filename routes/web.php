@@ -23,6 +23,8 @@ Route::prefix('api')->group(function () {
 
     Route::get('/saved-requests',                 [SavedRequestController::class, 'index']);
     Route::post('/saved-requests',                [SavedRequestController::class, 'store']);
+    Route::post('/saved-requests/import',         [SavedRequestController::class, 'import']);
+    Route::get('/saved-requests/export',          [SavedRequestController::class, 'export']);
     Route::get('/saved-requests/{savedRequest}',  [SavedRequestController::class, 'show']);
     Route::put('/saved-requests/{savedRequest}',  [SavedRequestController::class, 'update']);
     Route::delete('/saved-requests/{savedRequest}', [SavedRequestController::class, 'destroy']);
