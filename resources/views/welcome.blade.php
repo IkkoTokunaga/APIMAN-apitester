@@ -76,7 +76,8 @@
 
                 <template x-for="h in histories" :key="h.id">
                     <div @click="loadFromHistory(h.id)"
-                         class="flex items-start gap-2 px-3 py-2.5 my-1 rounded-xl hover:bg-white cursor-pointer transition-all group border border-transparent hover:border-orange-300">
+                         :class="historyItemClass(h.status_code)"
+                         class="flex items-start gap-2 px-3 py-2.5 my-1 rounded-xl cursor-pointer transition-all group border">
                         <span :class="methodBadgeClass(h.method)"
                               class="shrink-0 text-[10px] font-bold px-2 py-0.5 rounded-full mt-0.5 w-14 text-center"
                               x-text="h.method"></span>
@@ -1022,6 +1023,22 @@ function apiTester() {
             if (code < 400) return 'text-amber-600';
             if (code < 500) return 'text-orange-600';
             return 'text-rose-500';
+        },
+
+        historyItemClass(code) {
+            if (!code || code === 0) {
+                return 'bg-rose-50 border-rose-200 hover:bg-rose-100 hover:border-rose-300';
+            }
+            if (code < 300) {
+                return 'border-transparent hover:bg-white hover:border-orange-300';
+            }
+            if (code < 400) {
+                return 'bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300';
+            }
+            if (code < 500) {
+                return 'bg-orange-50 border-orange-200 hover:bg-orange-100 hover:border-orange-300';
+            }
+            return 'bg-rose-50 border-rose-200 hover:bg-rose-100 hover:border-rose-300';
         },
 
         // ===== Collection run =====
