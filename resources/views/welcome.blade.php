@@ -1127,17 +1127,8 @@ function apiTester() {
         },
 
         historyItemClass(code) {
-            if (!code || code === 0) {
-                return 'bg-rose-50 border-rose-200 hover:bg-rose-100 hover:border-rose-300';
-            }
-            if (code < 300) {
+            if (code && code >= 200 && code < 300) {
                 return 'border-transparent hover:bg-orange-100/70 hover:border-orange-300';
-            }
-            if (code < 400) {
-                return 'bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300';
-            }
-            if (code < 500) {
-                return 'bg-orange-50 border-orange-200 hover:bg-orange-100 hover:border-orange-300';
             }
             return 'bg-rose-50 border-rose-200 hover:bg-rose-100 hover:border-rose-300';
         },
