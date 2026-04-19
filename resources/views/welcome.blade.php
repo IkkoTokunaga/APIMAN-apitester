@@ -34,6 +34,41 @@
 
         {{-- ======== HISTORY ======== --}}
         <div x-show="sideTab === 'history'" class="flex-1 flex flex-col min-h-0">
+
+            {{-- Collection run progress panel --}}
+            <template x-if="collectionRun.active || collectionRun.results.length > 0">
+                <div class="border-b border-orange-300 bg-white px-3 py-3 space-y-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-[10px] font-bold uppercase tracking-widest text-orange-600 truncate flex-1"
+                              x-text="'RUN: ' + collectionRun.collectionName"></span>
+                        <button x-show="collectionRun.active"
+                                @click="cancelCollectionRun()"
+                                class="text-[10px] px-2 py-0.5 rounded-md border border-rose-300 text-rose-600 hover:bg-rose-50 transition-colors font-bold">
+                            CANCEL
+                        </button>
+                        <button x-show="!collectionRun.active"
+                                @click="clearCollectionRun()"
+                                class="text-[10px] px-2 py-0.5 rounded-md border border-stone-300 text-stone-500 hover:bg-stone-50 transition-colors font-bold">
+                            CLEAR
+                        </button>
+                    </div>
+
+                    {{-- Progress bar --}}
+                    <div class="w-full h-1.5 bg-orange-100 rounded-full overflow-hidden">
+                        <div class="h-full transition-all duration-300"
+                             :class="collectionRun.cancelled ? 'bg-rose-400' : (collectionRun.active ? 'bg-orange-400' : 'bg-emerald-400')"
+                             :style="'width:' + (collectionRun.total > 0 ? Math.round((collectionRun.currentIndex / collectionRun.total) * 100) : 0) + '%'"></div>
+                    </div>
+
+                    <div class="flex items-center justify-between text-[10px]">
+                        <span class="text-stone-500 font-bold"
+                              x-text="collectionRun.currentIndex + ' / ' + collectionRun.total"></span>
+                        <span class="text-stone-400 truncate ml-2"
+                              x-text="collectionRun.currentTitle"></span>
+                    </div>
+                </div>
+            </template>
+
             <div class="overflow-y-auto flex-1 scrollbar-warm px-2 py-2">
                 <template x-if="histories.length === 0">
                     <p class="px-4 py-8 text-xs text-stone-400 text-center">NO HISTORY YET</p>
@@ -78,7 +113,7 @@
 
                 {{-- Each collection --}}
                 <template x-for="c in collections" :key="c.id">
-                    <div class="mb-1">
+                    <div class="mb-1 group">
                         <div class="flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-white transition-all">
                             <button @click="toggleCollection(c.id)"
                                     class="shrink-0 text-stone-400 hover:text-orange-500 w-4 text-center text-xs">
@@ -86,6 +121,10 @@
                             </button>
                             <span class="text-xs font-bold text-stone-600 truncate flex-1" x-text="c.name"></span>
                             <span class="text-[10px] text-stone-400 shrink-0" x-text="(c.saved_requests?.length ?? 0)"></span>
+                            <button @click.stop="runCollection(c)"
+                                    :disabled="collectionRun.active || (c.saved_requests?.length ?? 0) === 0"
+                                    class="text-[10px] text-emerald-600 hover:text-emerald-700 disabled:text-stone-300 disabled:cursor-not-allowed px-1 font-bold"
+                                    title="RUN ALL REQUESTS">RUN</button>
                             <button @click.stop="renameCollection(c)"
                                     class="opacity-0 group-hover:opacity-100 hover:opacity-100 text-[10px] text-stone-400 hover:text-orange-600 px-1 font-bold">RENAME</button>
                             <button @click.stop="deleteCollection(c)"
@@ -583,6 +622,17 @@ function apiTester() {
         importStatus: { message: '', error: false },
         exportStatus: { message: '', error: false, loading: false },
 
+        // Collection run state
+        collectionRun: {
+            active: false,
+            cancelled: false,
+            collectionName: '',
+            total: 0,
+            currentIndex: 0,
+            currentTitle: '',
+            results: [],
+        },
+
         init() {
             this.loadHistory();
             this.loadCollections();
@@ -972,6 +1022,109 @@ function apiTester() {
             if (code < 400) return 'text-amber-600';
             if (code < 500) return 'text-orange-600';
             return 'text-rose-500';
+        },
+
+        // ===== Collection run =====
+
+        async runCollection(c) {
+            if (this.collectionRun.active) return;
+            const requests = c.saved_requests ?? [];
+            if (requests.length === 0) {
+                alert('This collection has no saved requests.');
+                return;
+            }
+
+            this.sideTab = 'history';
+            this.collectionRun = {
+                active: true,
+                cancelled: false,
+                collectionName: c.name,
+                total: requests.length,
+                currentIndex: 0,
+                currentTitle: '',
+                results: [],
+            };
+
+            for (let i = 0; i < requests.length; i++) {
+                if (this.collectionRun.cancelled) break;
+
+                const summary = requests[i];
+                this.collectionRun.currentIndex = i + 1;
+                this.collectionRun.currentTitle = summary.title;
+
+                let result = {
+                    id:          summary.id,
+                    title:       summary.title,
+                    method:      summary.method,
+                    url:         summary.url,
+                    status_code: 0,
+                    duration_ms: 0,
+                    error:       null,
+                };
+
+                try {
+                    const detailRes = await fetch('/api/saved-requests/' + summary.id);
+                    if (!detailRes.ok) throw new Error('failed to load saved request');
+                    const r = await detailRes.json();
+
+                    const headers = (r.request_headers && typeof r.request_headers === 'object') ? r.request_headers : {};
+                    const substitutedHeaders = {};
+                    for (const [k, v] of Object.entries(headers)) {
+                        substitutedHeaders[this.substituteVars(k)] =
+                            this.substituteVars(typeof v === 'string' ? v : String(v ?? ''));
+                    }
+
+                    const proxyRes = await fetch('/api/proxy', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': this.csrf(),
+                        },
+                        body: JSON.stringify({
+                            method:  r.method,
+                            url:     this.substituteVars(r.url),
+                            headers: substitutedHeaders,
+                            body:    this.substituteVars(r.request_body ?? ''),
+                        }),
+                    });
+
+                    const data = await proxyRes.json().catch(() => ({}));
+                    if (!proxyRes.ok) {
+                        result.error = data.message || ('HTTP ' + proxyRes.status);
+                    } else {
+                        result.status_code = data.status_code;
+                        result.duration_ms = data.duration_ms;
+                    }
+                } catch (e) {
+                    result.error = e.message;
+                }
+
+                this.collectionRun.results.push(result);
+                await this.loadHistory();
+            }
+
+            this.collectionRun.active = false;
+            this.collectionRun.currentTitle = this.collectionRun.cancelled
+                ? 'CANCELLED (' + this.collectionRun.results.length + '/' + this.collectionRun.total + ')'
+                : 'COMPLETED (' + this.collectionRun.results.length + '/' + this.collectionRun.total + ')';
+        },
+
+        cancelCollectionRun() {
+            if (this.collectionRun.active) {
+                this.collectionRun.cancelled = true;
+            }
+        },
+
+        clearCollectionRun() {
+            this.collectionRun = {
+                active: false,
+                cancelled: false,
+                collectionName: '',
+                total: 0,
+                currentIndex: 0,
+                currentTitle: '',
+                results: [],
+            };
         },
 
         // ===== Settings: open/close =====
