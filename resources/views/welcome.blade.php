@@ -649,7 +649,7 @@ function apiTester() {
     return {
         tab: 'body',
         resTab: 'body',
-        sideTab: 'history',
+        sideTab: 'saved',
         loading: false,
         form: {
             method: 'GET',
@@ -885,6 +885,18 @@ function apiTester() {
             this.collections = await colsRes.json();
             const saved = await savedRes.json();
             this.uncategorized = saved.filter(r => r.collection_id === null);
+
+            const openCollectionId = this.currentSaved
+                ? (this.currentSaved.collection_id ?? '__uncat__')
+                : null;
+            const newCollapsed = {};
+            for (const c of this.collections) {
+                newCollapsed[c.id] = (openCollectionId !== c.id);
+            }
+            if (this.uncategorized.length > 0) {
+                newCollapsed['__uncat__'] = (openCollectionId !== '__uncat__');
+            }
+            this.collapsed = newCollapsed;
         },
 
         toggleCollection(id) {
@@ -951,6 +963,8 @@ function apiTester() {
                 title: r.title,
                 collection_id: r.collection_id,
             };
+            const key = r.collection_id ?? '__uncat__';
+            this.collapsed[key] = false;
         },
 
         clearCurrentSaved() {
