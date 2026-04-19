@@ -153,6 +153,7 @@
                             </template>
                             <template x-for="r in c.saved_requests" :key="r.id">
                                 <div @click="loadFromSaved(r.id)"
+                                     x-data="{ menuOpen: false }"
                                      :class="isCurrentSaved(r.id)
                                          ? 'bg-orange-200/70 border-orange-400 ring-1 ring-orange-400 shadow-sm'
                                          : 'border-transparent hover:bg-orange-100/70 hover:border-orange-300'"
@@ -170,8 +171,20 @@
                                         </div>
                                         <p class="text-[10px] text-stone-400 truncate" x-text="r.url"></p>
                                     </div>
-                                    <button @click.stop="deleteSaved(r)"
-                                            class="opacity-0 group-hover:opacity-100 text-[10px] text-stone-400 hover:text-rose-500 px-1 font-bold">DEL</button>
+                                    <div class="relative shrink-0" @click.outside="menuOpen = false">
+                                        <button @click.stop="menuOpen = !menuOpen"
+                                                :class="menuOpen ? 'opacity-100 bg-stone-200/70 text-stone-600' : 'opacity-0 group-hover:opacity-100 text-stone-400 hover:text-stone-600 hover:bg-stone-200/70'"
+                                                class="leading-none text-sm font-bold px-1.5 rounded transition-all"
+                                                title="More">⋯</button>
+                                        <div x-show="menuOpen"
+                                             x-transition.opacity
+                                             @click.stop
+                                             class="absolute right-0 top-full mt-1 z-20 min-w-[120px] bg-white border border-stone-200 rounded-md shadow-lg py-1"
+                                             style="display: none;">
+                                            <button @click.stop="menuOpen = false; deleteSaved(r)"
+                                                    class="w-full text-left text-[11px] px-3 py-1.5 text-rose-600 hover:bg-rose-50 font-bold uppercase tracking-wide">Delete</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </template>
                         </div>
@@ -191,6 +204,7 @@
                         <div x-show="!collapsed['__uncat__']" class="pl-3">
                             <template x-for="r in uncategorized" :key="r.id">
                                 <div @click="loadFromSaved(r.id)"
+                                     x-data="{ menuOpen: false }"
                                      :class="isCurrentSaved(r.id)
                                          ? 'bg-orange-200/70 border-orange-400 ring-1 ring-orange-400 shadow-sm'
                                          : 'border-transparent hover:bg-orange-100/70 hover:border-orange-300'"
@@ -208,8 +222,20 @@
                                         </div>
                                         <p class="text-[10px] text-stone-400 truncate" x-text="r.url"></p>
                                     </div>
-                                    <button @click.stop="deleteSaved(r)"
-                                            class="opacity-0 group-hover:opacity-100 text-[10px] text-stone-400 hover:text-rose-500 px-1 font-bold">DEL</button>
+                                    <div class="relative shrink-0" @click.outside="menuOpen = false">
+                                        <button @click.stop="menuOpen = !menuOpen"
+                                                :class="menuOpen ? 'opacity-100 bg-stone-200/70 text-stone-600' : 'opacity-0 group-hover:opacity-100 text-stone-400 hover:text-stone-600 hover:bg-stone-200/70'"
+                                                class="leading-none text-sm font-bold px-1.5 rounded transition-all"
+                                                title="More">⋯</button>
+                                        <div x-show="menuOpen"
+                                             x-transition.opacity
+                                             @click.stop
+                                             class="absolute right-0 top-full mt-1 z-20 min-w-[120px] bg-white border border-stone-200 rounded-md shadow-lg py-1"
+                                             style="display: none;">
+                                            <button @click.stop="menuOpen = false; deleteSaved(r)"
+                                                    class="w-full text-left text-[11px] px-3 py-1.5 text-rose-600 hover:bg-rose-50 font-bold uppercase tracking-wide">Delete</button>
+                                        </div>
+                                    </div>
                                 </div>
                             </template>
                         </div>
