@@ -114,22 +114,38 @@
 
                 {{-- Each collection --}}
                 <template x-for="c in collections" :key="c.id">
-                    <div class="mb-1 group">
-                        <div class="flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-white transition-all">
-                            <button @click="toggleCollection(c.id)"
-                                    class="shrink-0 text-stone-400 hover:text-orange-500 w-4 text-center text-xs">
-                                <span x-text="collapsed[c.id] ? '▸' : '▾'"></span>
-                            </button>
+                    <div class="mb-1" x-data="{ menuOpen: false }">
+                        <div @click="toggleCollection(c.id)"
+                             class="flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-orange-100/70 transition-all cursor-pointer select-none">
+                            <span class="shrink-0 text-stone-400 w-4 text-center text-xs"
+                                  x-text="collapsed[c.id] ? '▸' : '▾'"></span>
                             <span class="text-xs font-bold text-stone-600 truncate flex-1" x-text="c.name"></span>
                             <span class="text-[10px] text-stone-400 shrink-0" x-text="(c.saved_requests?.length ?? 0)"></span>
-                            <button @click.stop="openRunModal(c)"
-                                    :disabled="collectionRun.active || (c.saved_requests?.length ?? 0) === 0"
-                                    class="text-[10px] text-emerald-600 hover:text-emerald-700 disabled:text-stone-300 disabled:cursor-not-allowed px-1 font-bold"
-                                    title="RUN ALL REQUESTS">RUN</button>
-                            <button @click.stop="renameCollection(c)"
-                                    class="opacity-0 group-hover:opacity-100 hover:opacity-100 text-[10px] text-stone-400 hover:text-orange-600 px-1 font-bold">RENAME</button>
-                            <button @click.stop="deleteCollection(c)"
-                                    class="opacity-0 group-hover:opacity-100 text-[10px] text-stone-400 hover:text-rose-500 px-1 font-bold">DEL</button>
+                            <div class="relative shrink-0" @click.stop>
+                                <button @click="menuOpen = !menuOpen"
+                                        class="w-6 h-6 flex items-center justify-center rounded-md text-stone-400 hover:text-orange-600 hover:bg-orange-100 transition-colors leading-none text-base font-bold"
+                                        title="MORE">⋯</button>
+                                <div x-show="menuOpen"
+                                     x-cloak
+                                     x-transition.opacity
+                                     @click.outside="menuOpen = false"
+                                     @keydown.escape.window="menuOpen = false"
+                                     class="absolute right-0 top-full mt-1 z-30 w-32 bg-white border border-orange-300 rounded-lg shadow-lg overflow-hidden">
+                                    <button @click="menuOpen = false; openRunModal(c)"
+                                            :disabled="collectionRun.active || (c.saved_requests?.length ?? 0) === 0"
+                                            class="block w-full text-left text-[11px] px-3 py-2 text-emerald-600 hover:bg-emerald-50 disabled:text-stone-300 disabled:cursor-not-allowed font-bold uppercase tracking-wider">
+                                        RUN
+                                    </button>
+                                    <button @click="menuOpen = false; renameCollection(c)"
+                                            class="block w-full text-left text-[11px] px-3 py-2 text-stone-600 hover:bg-orange-50 hover:text-orange-700 font-bold uppercase tracking-wider">
+                                        RENAME
+                                    </button>
+                                    <button @click="menuOpen = false; deleteCollection(c)"
+                                            class="block w-full text-left text-[11px] px-3 py-2 text-rose-600 hover:bg-rose-50 font-bold uppercase tracking-wider">
+                                        DELETE
+                                    </button>
+                                </div>
+                            </div>
                         </div>
 
                         <div x-show="!collapsed[c.id]" class="pl-3">
@@ -138,7 +154,7 @@
                             </template>
                             <template x-for="r in c.saved_requests" :key="r.id">
                                 <div @click="loadFromSaved(r.id)"
-                                     class="flex items-start gap-2 px-2 py-1.5 my-0.5 rounded-lg hover:bg-white cursor-pointer transition-all group border border-transparent hover:border-orange-300">
+                                     class="flex items-start gap-2 px-2 py-1.5 my-0.5 rounded-lg hover:bg-orange-100/70 cursor-pointer transition-all group border border-transparent hover:border-orange-300">
                                     <span :class="methodBadgeClass(r.method)"
                                           class="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full mt-0.5 w-14 text-center"
                                           x-text="r.method"></span>
@@ -157,11 +173,10 @@
                 {{-- Uncategorized --}}
                 <template x-if="uncategorized.length > 0">
                     <div class="mb-1">
-                        <div class="flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-white transition-all">
-                            <button @click="toggleCollection('__uncat__')"
-                                    class="shrink-0 text-stone-400 hover:text-orange-500 w-4 text-center text-xs">
-                                <span x-text="collapsed['__uncat__'] ? '▸' : '▾'"></span>
-                            </button>
+                        <div @click="toggleCollection('__uncat__')"
+                             class="flex items-center gap-1 px-2 py-1.5 rounded-lg hover:bg-orange-100/70 transition-all cursor-pointer select-none">
+                            <span class="shrink-0 text-stone-400 w-4 text-center text-xs"
+                                  x-text="collapsed['__uncat__'] ? '▸' : '▾'"></span>
                             <span class="text-xs font-bold text-stone-600 truncate flex-1">UNCATEGORIZED</span>
                             <span class="text-[10px] text-stone-400 shrink-0" x-text="uncategorized.length"></span>
                         </div>
@@ -169,7 +184,7 @@
                         <div x-show="!collapsed['__uncat__']" class="pl-3">
                             <template x-for="r in uncategorized" :key="r.id">
                                 <div @click="loadFromSaved(r.id)"
-                                     class="flex items-start gap-2 px-2 py-1.5 my-0.5 rounded-lg hover:bg-white cursor-pointer transition-all group border border-transparent hover:border-orange-300">
+                                     class="flex items-start gap-2 px-2 py-1.5 my-0.5 rounded-lg hover:bg-orange-100/70 cursor-pointer transition-all group border border-transparent hover:border-orange-300">
                                     <span :class="methodBadgeClass(r.method)"
                                           class="shrink-0 text-[10px] font-bold px-1.5 py-0.5 rounded-full mt-0.5 w-14 text-center"
                                           x-text="r.method"></span>
@@ -1118,7 +1133,7 @@ function apiTester() {
                 return 'bg-rose-50 border-rose-200 hover:bg-rose-100 hover:border-rose-300';
             }
             if (code < 300) {
-                return 'border-transparent hover:bg-white hover:border-orange-300';
+                return 'border-transparent hover:bg-orange-100/70 hover:border-orange-300';
             }
             if (code < 400) {
                 return 'bg-amber-50 border-amber-200 hover:bg-amber-100 hover:border-amber-300';
