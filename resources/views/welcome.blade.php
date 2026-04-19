@@ -120,7 +120,6 @@
                             <span class="shrink-0 text-stone-400 w-4 text-center text-xs"
                                   x-text="collapsed[c.id] ? '▸' : '▾'"></span>
                             <span class="text-xs font-bold text-stone-600 truncate flex-1" x-text="c.name"></span>
-                            <span class="text-[10px] text-stone-400 shrink-0" x-text="(c.saved_requests?.length ?? 0)"></span>
                             <div class="relative shrink-0" @click.stop>
                                 <button @click="menuOpen = !menuOpen"
                                         class="w-6 h-6 flex items-center justify-center rounded-md text-stone-400 hover:text-orange-600 hover:bg-orange-100 transition-colors leading-none text-base font-bold"
@@ -178,7 +177,6 @@
                             <span class="shrink-0 text-stone-400 w-4 text-center text-xs"
                                   x-text="collapsed['__uncat__'] ? '▸' : '▾'"></span>
                             <span class="text-xs font-bold text-stone-600 truncate flex-1">UNCATEGORIZED</span>
-                            <span class="text-[10px] text-stone-400 shrink-0" x-text="uncategorized.length"></span>
                         </div>
 
                         <div x-show="!collapsed['__uncat__']" class="pl-3">
