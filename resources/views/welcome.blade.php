@@ -122,7 +122,7 @@
                             </button>
                             <span class="text-xs font-bold text-stone-600 truncate flex-1" x-text="c.name"></span>
                             <span class="text-[10px] text-stone-400 shrink-0" x-text="(c.saved_requests?.length ?? 0)"></span>
-                            <button @click.stop="runCollection(c)"
+                            <button @click.stop="openRunModal(c)"
                                     :disabled="collectionRun.active || (c.saved_requests?.length ?? 0) === 0"
                                     class="text-[10px] text-emerald-600 hover:text-emerald-700 disabled:text-stone-300 disabled:cursor-not-allowed px-1 font-bold"
                                     title="RUN ALL REQUESTS">RUN</button>
@@ -447,6 +447,70 @@
     </div>
 </div>
 
+{{-- ======== Run Modal ======== --}}
+<div x-show="runModal.open"
+     x-cloak
+     @keydown.escape.window="runModal.open = false"
+     class="fixed inset-0 z-40 flex items-center justify-center bg-stone-900/40 backdrop-blur-sm px-4"
+     x-transition.opacity>
+    <div class="bg-white border border-orange-300 rounded-2xl shadow-xl w-full max-w-md p-6 space-y-4">
+        <h3 class="text-lg font-bold text-orange-700 uppercase tracking-wider">RUN OPTIONS</h3>
+
+        <div class="text-xs text-stone-500 leading-relaxed">
+            <span class="font-bold text-stone-700" x-text="runModal.collectionName"></span>
+            の保存済みリクエスト
+            <span class="font-bold text-stone-700" x-text="runModal.requestCount"></span>
+            件を順番に実行します。
+        </div>
+
+        <div class="space-y-1">
+            <label class="text-xs text-stone-500 font-semibold uppercase">REPEAT (回数)</label>
+            <input x-model.number="runModal.repeat"
+                   type="number"
+                   min="1"
+                   max="1000"
+                   class="w-full bg-white border border-orange-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all">
+            <p class="text-[10px] text-stone-400">コレクション全体を何回繰り返すか（デフォルト 1）</p>
+        </div>
+
+        <div class="space-y-1">
+            <label class="text-xs text-stone-500 font-semibold uppercase">DELAY (ms)</label>
+            <input x-model.number="runModal.delay"
+                   type="number"
+                   min="0"
+                   max="600000"
+                   step="100"
+                   class="w-full bg-white border border-orange-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-all">
+            <p class="text-[10px] text-stone-400">各リクエスト間の待機時間（ミリ秒、デフォルト 0）</p>
+        </div>
+
+        <div class="text-[11px] text-stone-500 bg-orange-50 border border-orange-200 rounded-lg px-3 py-2">
+            合計実行回数:
+            <span class="font-bold text-orange-700"
+                  x-text="Math.max(1, runModal.repeat || 1) * runModal.requestCount"></span>
+            <template x-if="runModal.delay > 0">
+                <span>
+                    / 推定最短時間:
+                    <span class="font-bold text-orange-700"
+                          x-text="formatDuration(Math.max(0, runModal.delay) * (Math.max(1, runModal.repeat || 1) * runModal.requestCount - 1))"></span>
+                </span>
+            </template>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2">
+            <button @click="runModal.open = false"
+                    class="text-xs px-4 py-2 rounded-md border border-stone-300 text-stone-600 hover:bg-stone-50 transition-colors font-bold">
+                CANCEL
+            </button>
+            <button @click="startCollectionRun()"
+                    :disabled="runModal.requestCount === 0"
+                    class="text-xs px-4 py-2 rounded-md bg-orange-500 hover:bg-orange-600 disabled:opacity-50 disabled:cursor-not-allowed text-white transition-colors font-bold">
+                START
+            </button>
+        </div>
+    </div>
+</div>
+
 {{-- ======== Settings Modal ======== --}}
 <div x-show="settingsModal.open"
      x-cloak
@@ -632,6 +696,16 @@ function apiTester() {
             currentIndex: 0,
             currentTitle: '',
             results: [],
+        },
+
+        // Run options modal
+        runModal: {
+            open: false,
+            collection: null,
+            collectionName: '',
+            requestCount: 0,
+            repeat: 1,
+            delay: 0,
         },
 
         init() {
@@ -1043,7 +1117,47 @@ function apiTester() {
 
         // ===== Collection run =====
 
-        async runCollection(c) {
+        openRunModal(c) {
+            if (this.collectionRun.active) return;
+            const requests = c.saved_requests ?? [];
+            if (requests.length === 0) {
+                alert('This collection has no saved requests.');
+                return;
+            }
+            this.runModal = {
+                open: true,
+                collection: c,
+                collectionName: c.name,
+                requestCount: requests.length,
+                repeat: this.runModal.repeat || 1,
+                delay: this.runModal.delay || 0,
+            };
+        },
+
+        formatDuration(ms) {
+            if (!ms || ms <= 0) return '0ms';
+            if (ms < 1000) return ms + 'ms';
+            const sec = ms / 1000;
+            if (sec < 60) return sec.toFixed(sec < 10 ? 1 : 0) + 's';
+            const min = Math.floor(sec / 60);
+            const rem = Math.round(sec - min * 60);
+            return min + 'm' + (rem > 0 ? ' ' + rem + 's' : '');
+        },
+
+        sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        },
+
+        async startCollectionRun() {
+            const c = this.runModal.collection;
+            if (!c) return;
+            const repeat = Math.max(1, parseInt(this.runModal.repeat, 10) || 1);
+            const delay  = Math.max(0, parseInt(this.runModal.delay, 10) || 0);
+            this.runModal.open = false;
+            await this.runCollection(c, { repeat, delay });
+        },
+
+        async runCollection(c, options = {}) {
             if (this.collectionRun.active) return;
             const requests = c.saved_requests ?? [];
             if (requests.length === 0) {
@@ -1051,79 +1165,107 @@ function apiTester() {
                 return;
             }
 
+            const repeat = Math.max(1, parseInt(options.repeat, 10) || 1);
+            const delay  = Math.max(0, parseInt(options.delay, 10) || 0);
+            const total  = requests.length * repeat;
+
             this.sideTab = 'history';
             this.collectionRun = {
                 active: true,
                 cancelled: false,
-                collectionName: c.name,
-                total: requests.length,
+                collectionName: repeat > 1 ? `${c.name} (×${repeat})` : c.name,
+                total,
                 currentIndex: 0,
                 currentTitle: '',
                 results: [],
             };
 
-            for (let i = 0; i < requests.length; i++) {
-                if (this.collectionRun.cancelled) break;
+            let step = 0;
+            outer:
+            for (let loop = 0; loop < repeat; loop++) {
+                for (let i = 0; i < requests.length; i++) {
+                    if (this.collectionRun.cancelled) break outer;
 
-                const summary = requests[i];
-                this.collectionRun.currentIndex = i + 1;
-                this.collectionRun.currentTitle = summary.title;
-
-                let result = {
-                    id:          summary.id,
-                    title:       summary.title,
-                    method:      summary.method,
-                    url:         summary.url,
-                    status_code: 0,
-                    duration_ms: 0,
-                    error:       null,
-                };
-
-                try {
-                    const detailRes = await fetch('/api/saved-requests/' + summary.id);
-                    if (!detailRes.ok) throw new Error('failed to load saved request');
-                    const r = await detailRes.json();
-
-                    const headers = (r.request_headers && typeof r.request_headers === 'object') ? r.request_headers : {};
-                    const substitutedHeaders = {};
-                    for (const [k, v] of Object.entries(headers)) {
-                        substitutedHeaders[this.substituteVars(k)] =
-                            this.substituteVars(typeof v === 'string' ? v : String(v ?? ''));
+                    if (delay > 0 && step > 0) {
+                        const slept = await this.sleepInterruptible(delay);
+                        if (!slept) break outer;
                     }
 
-                    const proxyRes = await fetch('/api/proxy', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'X-CSRF-TOKEN': this.csrf(),
-                        },
-                        body: JSON.stringify({
-                            method:  r.method,
-                            url:     this.substituteVars(r.url),
-                            headers: substitutedHeaders,
-                            body:    this.substituteVars(r.request_body ?? ''),
-                        }),
-                    });
+                    const summary = requests[i];
+                    step++;
+                    this.collectionRun.currentIndex = step;
+                    this.collectionRun.currentTitle = repeat > 1
+                        ? `[${loop + 1}/${repeat}] ${summary.title}`
+                        : summary.title;
 
-                    const data = await proxyRes.json().catch(() => ({}));
-                    if (!proxyRes.ok) {
-                        result.error = data.message || ('HTTP ' + proxyRes.status);
-                    } else {
-                        result.status_code = data.status_code;
-                        result.duration_ms = data.duration_ms;
+                    let result = {
+                        id:          summary.id,
+                        title:       summary.title,
+                        method:      summary.method,
+                        url:         summary.url,
+                        status_code: 0,
+                        duration_ms: 0,
+                        error:       null,
+                    };
+
+                    try {
+                        const detailRes = await fetch('/api/saved-requests/' + summary.id);
+                        if (!detailRes.ok) throw new Error('failed to load saved request');
+                        const r = await detailRes.json();
+
+                        const headers = (r.request_headers && typeof r.request_headers === 'object') ? r.request_headers : {};
+                        const substitutedHeaders = {};
+                        for (const [k, v] of Object.entries(headers)) {
+                            substitutedHeaders[this.substituteVars(k)] =
+                                this.substituteVars(typeof v === 'string' ? v : String(v ?? ''));
+                        }
+
+                        const proxyRes = await fetch('/api/proxy', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': this.csrf(),
+                            },
+                            body: JSON.stringify({
+                                method:  r.method,
+                                url:     this.substituteVars(r.url),
+                                headers: substitutedHeaders,
+                                body:    this.substituteVars(r.request_body ?? ''),
+                            }),
+                        });
+
+                        const data = await proxyRes.json().catch(() => ({}));
+                        if (!proxyRes.ok) {
+                            result.error = data.message || ('HTTP ' + proxyRes.status);
+                        } else {
+                            result.status_code = data.status_code;
+                            result.duration_ms = data.duration_ms;
+                        }
+                    } catch (e) {
+                        result.error = e.message;
                     }
-                } catch (e) {
-                    result.error = e.message;
+
+                    this.collectionRun.results.push(result);
+                    await this.loadHistory();
                 }
-
-                this.collectionRun.results.push(result);
-                await this.loadHistory();
             }
 
             this.collectionRun.active = false;
             this.collectionRun.currentTitle = this.collectionRun.cancelled
                 ? 'CANCELLED (' + this.collectionRun.results.length + '/' + this.collectionRun.total + ')'
                 : 'COMPLETED (' + this.collectionRun.results.length + '/' + this.collectionRun.total + ')';
+        },
+
+        async sleepInterruptible(ms) {
+            const stepMs = 100;
+            let waited = 0;
+            while (waited < ms) {
+                if (this.collectionRun.cancelled) return false;
+                const chunk = Math.min(stepMs, ms - waited);
+                await this.sleep(chunk);
+                waited += chunk;
+            }
+            return !this.collectionRun.cancelled;
         },
 
         cancelCollectionRun() {
