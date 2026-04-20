@@ -22,5 +22,6 @@ services:
       APP_URL: "http://localhost:19876"
       DB_CONNECTION: sqlite
       DB_DATABASE: /var/www/html/database/database.sqlite
+      SESSION_DRIVER: file
       VITE_PORT: "5173"
     restart: unless-stopped
