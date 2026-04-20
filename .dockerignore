@@ -1,0 +1,53 @@
+# ---- VCS / editor ----
+.git
+.gitattributes
+.gitignore
+.github
+.vscode
+.idea
+.nova
+.zed
+.cursor
+.cursorrules
+.editorconfig
+
+# ---- local env / secrets ----
+.env
+.env.*
+!.env.example
+auth.json
+
+# ---- dependencies & build artifacts (rebuilt inside the image) ----
+node_modules
+vendor
+public/build
+public/hot
+public/storage
+.npm
+
+# ---- persistent / runtime data ----
+database/database.sqlite
+database/*.sqlite
+database/*.sqlite-journal
+storage/logs/*
+storage/framework/cache/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/framework/testing/*
+supervisord.pid
+*.log
+
+# ---- tests / docs not needed at runtime ----
+tests
+phpunit.xml
+.phpunit.result.cache
+.phpunit.cache
+README.md
+docs
+
+# ---- misc ----
+.DS_Store
+Thumbs.db
+_ide_helper.php
+Homestead.json
+Homestead.yaml

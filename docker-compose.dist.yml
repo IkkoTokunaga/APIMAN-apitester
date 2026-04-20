@@ -1,0 +1,30 @@
+# =======================================================================
+# 配布用 Compose ファイル（Docker Hub から取得したイメージを使って起動する）
+#
+# 使い方:
+#   1. このファイル 1 つをダウンロード（もしくはコピー）する
+#   2. 同じディレクトリで:
+#        docker compose -f docker-compose.dist.yml up -d
+#   3. ブラウザで http://localhost:19876 を開く
+#
+# 永続化:
+#   - SQLite を入れる database ボリュームはホストの ./database/ に保存されます。
+#     コンテナを削除してもデータは残ります。
+# =======================================================================
+services:
+  app:
+    image: apiman/api-tester:latest
+    container_name: api-tester
+    ports:
+      # ホスト側のポートはお好みで変更可（例: "8080:80"）
+      - "19876:80"
+    volumes:
+      # SQLite を永続化（コンテナ削除後も履歴・保存リクエストを保持）
+      - ./database:/var/www/html/database
+    environment:
+      APP_ENV: production
+      APP_DEBUG: "false"
+      APP_URL: "http://localhost:19876"
+      DB_CONNECTION: sqlite
+      DB_DATABASE: /var/www/html/database/database.sqlite
+    restart: unless-stopped
