@@ -16,6 +16,9 @@ permissions:
 
 env:
   IMAGE: tokuppee15/api-tester
+  # Node.js 20 廃止 (2026-09-16) 対応: 各 action を Node.js 24 で実行する。
+  # 2026-06-02 以降は不要になるが、それまで警告抑止のため明示。
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
   # ============================================================
