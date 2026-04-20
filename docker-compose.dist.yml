@@ -13,7 +13,7 @@
 # =======================================================================
 services:
   app:
-    image: apiman/api-tester:latest
+    image: tokuppee15/api-tester:latest
     container_name: api-tester
     ports:
       # ホスト側のポートはお好みで変更可（例: "8080:80"）

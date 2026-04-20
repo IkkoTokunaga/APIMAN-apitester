@@ -7,7 +7,7 @@ services:
         # 必要に応じて `UID=$(id -u) GID=$(id -g) docker compose build` で上書き可
         UID: "${UID:-1000}"
         GID: "${GID:-1000}"
-    image: apiman/api-tester:latest
+    image: tokuppee15/api-tester:latest
     ports:
       - "19876:80"
       - "5173:5173"
