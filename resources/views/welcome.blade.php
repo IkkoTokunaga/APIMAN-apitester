@@ -13,9 +13,9 @@
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" defer></script>
     @vite(['resources/css/app.css', 'resources/js/app.js'])
 </head>
-<body class="h-full text-stone-700 font-sans antialiased" x-data="apiTester()" x-init="init()">
+<body class="h-full text-stone-700 font-sans antialiased bg-orange-100/40" x-data="apiTester()" x-init="init()">
 
-<div class="flex h-full">
+<div class="flex h-full max-w-screen-xl mx-auto border-x border-orange-300 bg-white">
 
     {{-- ======== Sidebar ======== --}}
     <aside class="w-72 bg-orange-50 border-r border-orange-300 flex flex-col shrink-0">
