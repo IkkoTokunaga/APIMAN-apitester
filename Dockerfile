@@ -8,8 +8,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm install
 
-COPY resources/css  ./resources/css
-COPY resources/js   ./resources/js
+# Tailwind v4 はビルド時に resources/**/*.blade.php をスキャンして
+# 使用クラスを抽出するため、views も含め resources/ 全体をコピーする。
+COPY resources      ./resources
 COPY vite.config.js ./
 
 RUN npm run build
